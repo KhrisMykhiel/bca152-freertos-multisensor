@@ -15,7 +15,8 @@ static adc_oneshot_unit_handle_t s_adcHandle = nullptr;
 
 void sensorsInit() {
     // LDR via ADC1 one-shot driver.
-    adc_oneshot_unit_init_cfg_t initCfg = { .unit_id = ADC_UNIT_1 };
+    adc_oneshot_unit_init_cfg_t initCfg = {};
+initCfg.unit_id = ADC_UNIT_1;       
     adc_oneshot_new_unit(&initCfg, &s_adcHandle);
 
     adc_oneshot_chan_cfg_t chanCfg = {
