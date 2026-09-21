@@ -133,3 +133,62 @@ flowchart TD
 ```bash
 ~/.platformio/penv/bin/pio check -e esp32dev
 ```
+
+---
+
+## 6. Learning Objectives Demonstrated
+- Creating and managing multiple FreeRTOS tasks with explicit priorities
+- Using queues for inter-task communication (sensor data, display page changes, encoder events)
+- Using a mutex to protect shared UART output
+- Using an event group for cross-task signaling (motion, alarm, system-active state)
+- Implementing periodic execution with `vTaskDelayUntil()`
+- Separating hardware-independent decision logic (`evaluateTemperature`, `evaluateSystemState`, `nextDisplayMode`) from hardware drivers
+- Writing and running automated unit tests with PlatformIO/Unity
+
+## 7. FreeRTOS Task Table
+
+| Task | Responsibility | Period/Trigger | Priority | IPC Used | Typical Blocked Condition |
+|---|---|---|---|---|---|
+| SensorTask | Read DHT22 + LDR | 2 s (vTaskDelayUntil) | 2 | Sends to sensor queue | Delay |
+| DisplayTask | Own/update OLED | Periodic / on queue data | 1 | Reads sensor + page queues | Waiting for data |
+| InputTask | Rotary encoder navigation | Event-driven (ISR) | 3 | Task notification/queue | Waiting for notification |
+| MotionTask | PIR monitoring | Short poll | 3 | Sets event group bits | Delay |
+| AlarmTask | Evaluate + drive buzzer | On sensor data | 2 | Reads sensor queue, sets event bits | Waiting for data |
+| StateTask | ACTIVE/INACTIVE state machine | Periodic | 2 | Reads/sets event group | Delay |
+
+*Priorities reflect scheduling urgency: MotionTask and InputTask (3) must respond promptly to real-world events; SensorTask/AlarmTask/StateTask (2) tolerate brief latency; DisplayTask (1) is lowest since a slightly stale screen has no functional consequence.*
+
+## 8. Requirements Traceability Matrix
+
+| Requirement | Implementation | Verification |
+|---|---|---|
+| FR-01 Temperature measurement | SensorTask | FT-01 |
+| FR-02 Humidity measurement | SensorTask | FT-02 |
+| FR-03 Ambient light | SensorTask | FT-03 |
+| FR-04 Motion detection | MotionTask | FT-08, FT-10 |
+| FR-05 OLED display | DisplayTask | FT-01–FT-03 |
+| FR-06 Encoder navigation | InputTask | FT-04, FT-05 |
+| FR-07 Temperature alarm | AlarmTask | FT-06, FT-07 |
+| FR-08 ACTIVE/INACTIVE states | StateTask | FT-08–FT-10 |
+| FR-09 Auto inactivity | StateTask | FT-09 |
+| FR-10 Auto reactivation | StateTask, MotionTask | FT-10 |
+
+## 9. Repository Structure
+
+include/ - Header files (interfaces, shared declarations)
+src/ - Implementation (.c) files
+test/ - Unity unit tests for hardware-independent logic
+diagram.json - Wokwi circuit definition
+wokwi.toml - Wokwi simulator config
+platformio.ini - Build configuration
+
+
+## 10. Limitations
+- Light level is a raw ADC-to-percentage mapping, not calibrated lux
+- DHT22 timing is bit-banged; simulated in Wokwi rather than verified on physical hardware
+- No persistent storage of alarm history or configuration across resets
+
+## 11. Future Improvements
+- Add NVS-based persistence for the temperature thresholds
+- Add a physical hardware build to compare timing against simulation
+- Expand static analysis coverage and address any remaining `pio check` findings
