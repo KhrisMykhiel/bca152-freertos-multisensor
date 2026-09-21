@@ -1,2 +1,7 @@
-﻿.pio/
+.pio
+.vscode/
+build/
+*.bin
+*.elf
+*.map
 

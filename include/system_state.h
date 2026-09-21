@@ -1,18 +1,25 @@
-#pragma once
+/* System state header file */
+#ifndef SYSTEM_STATE_H
+#define SYSTEM_STATE_H
+
 #include <stdint.h>
+#include <stdbool.h>
 
-enum class SystemState {
-    ACTIVE,
-    INACTIVE
-};
+// Seconds to wait before going to sleep
+#define INACTIVITY_TIMEOUT_SECONDS 15
 
-// Pure, unit-testable transition function.
-//   currentState        : state before this evaluation
-//   motionSeen           : true if motion occurred since last check
-//   msSinceLastMotion    : elapsed time since motion was last seen
-//   inactivityTimeoutMs  : configured timeout (see INACTIVITY_TIMEOUT_MS)
-SystemState evaluateSystemState(SystemState currentState, bool motionSeen,
-                                 uint32_t msSinceLastMotion,
-                                 uint32_t inactivityTimeoutMs);
+// Sleep states
+typedef enum {
+    SYSTEM_ACTIVE, // Awake
+    SYSTEM_INACTIVE // Asleep
+} SystemState;
 
-void StateTask(void *pvParameters);
+// Decide the next sleep state
+SystemState evaluateSystemState(SystemState current, bool motionDetected, uint32_t elapsedInactiveSec, uint32_t timeoutSec);
+
+#ifndef TEST_NATIVE
+// Main loop to check if we should sleep or wake up
+void StateTask(void* pvParameters);
+#endif
+
+#endif // SYSTEM_STATE_H

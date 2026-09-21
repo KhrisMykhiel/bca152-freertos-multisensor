@@ -1,18 +1,23 @@
-#pragma once
+/* Display header file */
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
-enum class DisplayMode {
-    TEMPERATURE,
-    HUMIDITY,
-    LIGHT,
-    MOTION
-};
+#include "input.h"
+#include "sensors.h"
 
-// Pure, hardware-independent navigation logic (unit-testable).
-DisplayMode nextDisplayMode(DisplayMode current);
-DisplayMode previousDisplayMode(DisplayMode current);
+// Pins for the screen connection
+#define I2C_MASTER_SCL_IO 22
+#define I2C_MASTER_SDA_IO 21
+// Speed of the screen connection
+#define I2C_MASTER_FREQ_HZ 400000
+// Hardware address of the screen
+#define SSD1306_I2C_ADDRESS 0x3C
 
-void displayInit();          // I2C + SSD1306 init
-void DisplayTask(void *pvParameters);
+#ifndef TEST_NATIVE
+// Setup the screen
+void initDisplay(void);
+// Main loop for the screen task
+void DisplayTask(void* pvParameters);
+#endif
 
-// Called by InputTask to change what DisplayTask should render.
-void displaySetMode(DisplayMode mode);
+#endif // DISPLAY_H

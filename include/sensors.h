@@ -1,23 +1,31 @@
-#pragma once
+/* Sensors header file */
+#ifndef SENSORS_H
+#define SENSORS_H
+
+#include <stdint.h>
 #include <stdbool.h>
 
-// Shared sensor snapshot pushed onto sensorQueue every sampling period.
-struct SensorData {
-    float temperature;   // Celsius
-    float humidity;      // percent RH
-    int   lightLevel;    // 0-100 (documented raw-ADC -> percent mapping)
-    bool  motionDetected;
-};
+// Pin for temperature and humidity sensor
+#define DHT_GPIO_PIN 4
+// Pin for light sensor
+#define LDR_ADC_CHANNEL ADC_CHANNEL_6
 
-// GPIO/ADC init for DHT22 + LDR. Called once from app_main before tasks start.
-void sensorsInit();
+// Structure to hold all sensor readings
+typedef struct {
+    float temperature;
+    float humidity;
+    int lightLevel;
+    bool motionDetected;
+} SensorData;
 
-// FreeRTOS task: periodically reads DHT22 + LDR, merges in the latest
-// motion flag, and pushes a SensorData sample onto sensorQueue.
-// Uses vTaskDelayUntil() to keep a fixed 2 s period regardless of how long
-// the read takes (see report section on drift).
-void SensorTask(void *pvParameters);
+// Change raw light sensor number into a percentage
+int convertRawAdcToLightPercent(int rawAdc);
 
-// Low-level reads, exposed for unit testing / reuse.
-bool readDHT22(float *temperatureOut, float *humidityOut);
-int  readLightPercent();
+#ifndef TEST_NATIVE
+// Setup all sensors
+void initSensors(void);
+// Main loop for the sensor task
+void SensorTask(void* pvParameters);
+#endif
+
+#endif // SENSORS_H
